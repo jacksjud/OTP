@@ -10,6 +10,15 @@
 
 void read_file(const char *filename, char *buffer, size_t size);
 
+/* 
+Function:   main
+
+Desc:   Acts as actual client,
+takes inputted files to get ciphertext
+and key in order to send to the
+decryption server. 
+
+*/
 int main(int argc, char *argv[]) {
     if(argc != 4) {
         fprintf(stderr, "Usage: %s ciphertext key port\n", argv[0]);
@@ -60,18 +69,23 @@ int main(int argc, char *argv[]) {
 
     // Store ciphertext and key to buffer, with delimiter
     snprintf(buffer, sizeof(buffer), "%s|%s", ciphertext, key);
-
+    
+    // Send buffer
     if(send(sockfd, buffer, strlen(buffer), 0) == -1) {
+        // if error, print and exit
         perror("DEC CLIENT: Error with send");
         exit(1);
     }
 
+    // Receive response 
     int numbytes = recv(sockfd, buffer, BUF_SIZE-1, 0);
     if(numbytes == -1) {
+        // if error, print and exit
         perror("DEC CLIENT: Error with recv");
         exit(1);
     }
 
+    // Set last to null char
     buffer[numbytes] = '\0';
     printf("%s\n", buffer);
 
@@ -79,16 +93,28 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
+/* 
+Function:   read_file
+
+Desc:   Takes file name, buffer (where to
+put the read text), and the size of the
+read. Reads line, removes newline chars,
+and closes file.
+
+*/
 void read_file(const char *filename, char *buffer, size_t size) {
+    // Open file in read mode
     FILE *file = fopen(filename, "r");
+
+    // If file wasn't opened successfully
     if(!file) {
+        // if error, print and exit
         perror("DEC CLIENT: Error with fopen");
         exit(1);
     }
+    // Read line from file - store to buffer
     if(!fgets(buffer, size, file)) {
+        // if error, print and exit
         perror("DEC CLIENT: Error with fgets");
         exit(1);
     }
-    buffer[strcspn(buffer, "\n")] = '\0';
-    fclose(file);
-}

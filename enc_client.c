@@ -11,6 +11,16 @@
 void read_file(const char *filename, char *buffer, size_t size);
 int validate_text(const char *text);
 
+
+/* 
+Function:   main
+
+Desc:   Acts as actual client,
+takes inputted files to get plaintext
+and key in order to send to the
+encryption server. 
+
+*/
 int main(int argc, char *argv[]) {
     // Make sure that we have enough arguments
     if(argc != 4) {
@@ -77,17 +87,22 @@ int main(int argc, char *argv[]) {
     // Store plaintext and key to buffer, with delimiter
     snprintf(buffer, sizeof(buffer), "%s|%s", plaintext, key);
 
+    // Send buffer
     if(send(sockfd, buffer, strlen(buffer), 0) == -1) {
+        // if error, print and exit
         perror("ENC CLIENT: Error with send");
         exit(1);
     }
 
+    // Receive response 
     int numbytes = recv(sockfd, buffer, BUF_SIZE-1, 0);
     if(numbytes == -1) {
+        // if error, print and exit
         perror("ENC CLIENT: Error with recv");
         exit(1);
     }
 
+    // Set last to null char
     buffer[numbytes] = '\0';
     printf("%s\n", buffer);
 
@@ -95,25 +110,59 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
+/* 
+Function:   read_file
+
+Desc:   Takes file name, buffer (where to
+put the read text), and the size of the
+read. Reads line, removes newline chars,
+and closes file.
+
+*/
 void read_file(const char *filename, char *buffer, size_t size) {
+    // Open file in read mode
     FILE *file = fopen(filename, "r");
+
+    // If file wasn't opened successfully
     if(!file) {
+        // if error, print and exit
         perror("ENC CLIENT: Error with fopen");
         exit(1);
     }
+    // Read line from file - store to buffer
     if(!fgets(buffer, size, file)) {
+        // if error, print and exit
         perror("ENC CLIENT: Error with fgets");
         exit(1);
     }
+
+    // Remove newline chars from end of any string that has it
     buffer[strcspn(buffer, "\n")] = '\0';
+
+    // Close file
     fclose(file);
 }
 
+
+/* 
+Function:   validate_text
+
+Desc:   Checks for invalid characters
+which are all characters other than
+capital letters (A - Z) and spaces,
+' '. If any are found, returns false
+(0), else returns true (1).
+
+*/
 int validate_text(const char *text) {
-    for (size_t i = 0; i < strlen(text); i++) {
+    // Go through each char in the text 
+    for(size_t i = 0; i < strlen(text); i++) {
+        // If not an uppercase letter or a space 
         if((text[i] < 'A' || text[i] > 'Z') && text[i] != ' ') {
+            // Return false (0) - text is not valid 
             return 0;
         }
     }
+    // Return true (1) - text is valid 
     return 1;
 }

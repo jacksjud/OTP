@@ -15,9 +15,18 @@
 void handle_client(int new_fd);
 char encrypt_char(char plain, char key);
 
+
+/* 
+Function:   main
+
+Desc:   Acts as server, encrypts sent
+plaintext according to the sent key.
+Sends back encrypted text.
+
+*/
 int main(int argc, char *argv[]) {
     // Make sure that we have enough arguments
-    if (argc != 2) {
+    if(argc != 2) {
         // Inform user of correct usage and exit 
         fprintf(stderr, "Usage: %s port\n", argv[0]);
         exit(1);
@@ -33,7 +42,7 @@ int main(int argc, char *argv[]) {
     // Create socket 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     // if fail, exit w/ message
-    if (sockfd == -1) {
+    if(sockfd == -1) {
         perror("ENC SERVER: Error with socket");
         exit(1);
     }
@@ -49,14 +58,14 @@ int main(int argc, char *argv[]) {
     server_addr.sin_addr.s_addr = INADDR_ANY;
 
     // Associate our socket w/ server socket address 
-    if (bind(sockfd, (struct sockaddr *)&server_addr, sizeof(struct sockaddr)) == -1) {
+    if(bind(sockfd, (struct sockaddr *)&server_addr, sizeof(struct sockaddr)) == -1) {
         // if error then print and exit
         perror("ENC SERVER: Error with bind");
         exit(1);
     }
 
     // Open server socket to start listening for client connections (w/ backlog of 5)
-    if (listen(sockfd, BACKLOG) == -1) {
+    if(listen(sockfd, BACKLOG) == -1) {
         // if error then print and exit
         perror("ENC SERVER: Error with listen");
         exit(1);
@@ -68,13 +77,13 @@ int main(int argc, char *argv[]) {
         sin_size = sizeof(struct sockaddr_in);
         // Create new socket based on connection 
         new_fd = accept(sockfd, (struct sockaddr *)&client_addr, &sin_size);
-        if (new_fd == -1) {
+        if(new_fd == -1) {
             // if error then print and skip connection
             perror("ENC SERVER: Error with accept");
             continue;
         }
         // If child process
-        if (!fork()) {
+        if(!fork()) {
             // close listening socket (child's server)
             close(sockfd);
             // use new socket file descriptor to communicate with client
@@ -90,13 +99,24 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
+/* 
+Function:   handle_client
+
+Desc:   Takes socket file descriptor
+and uses it to receive plain text
+and key from client. It then 
+encrypts this text by calling
+the encrypt_char function for
+each character in the text.
+
+*/
 void handle_client(int new_fd) {
     char buffer[BUF_SIZE];
     int numbytes;
     
     // Receive plaintext and key
     numbytes = recv(new_fd, buffer, BUF_SIZE-1, 0);
-    if (numbytes == -1) {
+    if(numbytes == -1) {
         // If error, print and return 
         perror("ENC SERVER: Error with recv");
         return;
@@ -112,17 +132,27 @@ void handle_client(int new_fd) {
     char ciphertext[len+1];                         // Create array for cipher
 
     // Go through every character and build up cipher text using encrypt_char
-    for (int i = 0; i < len; i++) {             
+    for(int i = 0; i < len; i++) {             
         ciphertext[i] = encrypt_char(plaintext[i], key[i]);
     }
     ciphertext[len] = '\0';                         // Set last to null char
 
     // Send ciphertext back
-    if (send(new_fd, ciphertext, len, 0) == -1) {
+    if(send(new_fd, ciphertext, len, 0) == -1) {
         perror("ENC SERVER: Error with send");
     }
 }
 
+
+/* 
+Function:   encrypt_char
+
+Desc:   Takes a plain text char and key char
+and uses their integer values, 0-25 for A-Z
+and 26 for a space ' ', to encrypt them.
+It returns the encrypted text 
+
+*/
 char encrypt_char(char plain, char key) {
     // Use plaintext char to get corresponding int val in alphabet (0-25), or 26 for space 
     int plain_val = plain == ' ' ? 26 : plain - 'A';
