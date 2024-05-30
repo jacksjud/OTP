@@ -118,3 +118,4 @@ void read_file(const char *filename, char *buffer, size_t size) {
         perror("DEC CLIENT: Error with fgets");
         exit(1);
     }
+}
